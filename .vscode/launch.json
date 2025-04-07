@@ -85,5 +85,12 @@
       "type": "dart",
       "program": "lib/recipes/recipes.dart",
     },
+    {
+      "name": "function_calling",
+      "cwd": "example",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/function_calling/function_calling.dart",
+    },
   ]
 }

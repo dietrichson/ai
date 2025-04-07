@@ -5,7 +5,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_ai_toolkit/flutter_ai_toolkit.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 LlmChatViewStyle darkChatViewStyle() {
   final style = LlmChatViewStyle.defaultStyle();
@@ -21,17 +20,6 @@ LlmChatViewStyle darkChatViewStyle() {
     stopButtonStyle: _darkActionButtonStyle(ActionButtonType.stop),
     recordButtonStyle: _darkActionButtonStyle(ActionButtonType.record),
     submitButtonStyle: _darkActionButtonStyle(ActionButtonType.submit),
-    closeMenuButtonStyle: _darkActionButtonStyle(ActionButtonType.closeMenu),
-    actionButtonBarDecoration: _invertDecoration(
-      style.actionButtonBarDecoration,
-    ),
-    fileAttachmentStyle: _darkFileAttachmentStyle(),
-    suggestionStyle: _darkSuggestionStyle(),
-    closeButtonStyle: _darkActionButtonStyle(ActionButtonType.close),
-    cancelButtonStyle: _darkActionButtonStyle(ActionButtonType.cancel),
-    copyButtonStyle: _darkActionButtonStyle(ActionButtonType.copy),
-    editButtonStyle: _darkActionButtonStyle(ActionButtonType.edit),
-    galleryButtonStyle: _darkActionButtonStyle(ActionButtonType.gallery),
   );
 }
 
@@ -50,16 +38,25 @@ UserMessageStyle _darkUserMessageStyle() {
 LlmMessageStyle _darkLlmMessageStyle() {
   final style = LlmMessageStyle.defaultStyle();
   return LlmMessageStyle(
-    icon: style.icon,
-    iconColor: _invertColor(style.iconColor),
-    // inversion doesn't look great here
-    // iconDecoration: invertDecoration(style.iconDecoration),
-    iconDecoration: BoxDecoration(
-      color: _greyBackground,
-      shape: BoxShape.circle,
-    ),
+    // Completely remove the icon
+    icon: null,
+    iconColor: null,
+    iconDecoration: null,
     markdownStyle: _invertMarkdownStyle(style.markdownStyle),
-    decoration: _invertDecoration(style.decoration),
+    // Make the decoration more transparent and flat for a full-width look
+    decoration: BoxDecoration(
+      // Very subtle dark background with transparency
+      color: Colors.grey[900]?.withAlpha(76), // 0.3 opacity
+      // No rounded corners for a flat look
+      borderRadius: BorderRadius.zero,
+      // Just a subtle bottom border
+      border: Border(
+        bottom: BorderSide(
+          color: Colors.grey[800]!.withAlpha(76), // 0.3 opacity
+          width: 1,
+        ),
+      ),
+    ),
   );
 }
 
@@ -68,9 +65,8 @@ ChatInputStyle _darkChatInputStyle() {
   return ChatInputStyle(
     decoration: _invertDecoration(style.decoration),
     textStyle: _invertTextStyle(style.textStyle),
-    // inversion doesn't look great here
-    // hintStyle: invertTextStyle(style.hintStyle),
-    hintStyle: GoogleFonts.roboto(
+    // Use a system font instead of GoogleFonts to avoid warnings
+    hintStyle: TextStyle(
       color: _greyBackground,
       fontSize: 14,
       fontWeight: FontWeight.w400,
@@ -88,10 +84,11 @@ ActionButtonStyle _darkActionButtonStyle(ActionButtonType type) {
     iconDecoration: switch (type) {
       ActionButtonType.add ||
       ActionButtonType.record ||
-      ActionButtonType.stop => BoxDecoration(
-        color: _greyBackground,
-        shape: BoxShape.circle,
-      ),
+      ActionButtonType.stop =>
+        BoxDecoration(
+          color: _greyBackground,
+          shape: BoxShape.circle,
+        ),
       _ => _invertDecoration(style.iconDecoration),
     },
     tooltip: style.tooltip,
@@ -100,59 +97,55 @@ ActionButtonStyle _darkActionButtonStyle(ActionButtonType type) {
   );
 }
 
-FileAttachmentStyle _darkFileAttachmentStyle() {
-  final style = FileAttachmentStyle.defaultStyle();
-  return FileAttachmentStyle(
-    // inversion doesn't look great here
-    // decoration: invertDecoration(style.decoration),
-    decoration: ShapeDecoration(
-      color: _greyBackground,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-    ),
-    icon: style.icon,
-    iconColor: _invertColor(style.iconColor),
-    iconDecoration: _invertDecoration(style.iconDecoration),
-    filenameStyle: _invertTextStyle(style.filenameStyle),
-    // inversion doesn't look great here
-    // filetypeStyle: invertTextStyle(style.filetypeStyle),
-    filetypeStyle: style.filetypeStyle!.copyWith(color: Colors.black),
-  );
-}
+// Note: These methods are not currently used but kept for reference
+// FileAttachmentStyle _darkFileAttachmentStyle() {
+//   final style = FileAttachmentStyle.defaultStyle();
+//   return FileAttachmentStyle(
+//     decoration: ShapeDecoration(
+//       color: _greyBackground,
+//       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+//     ),
+//     icon: style.icon,
+//     iconColor: _invertColor(style.iconColor),
+//     iconDecoration: _invertDecoration(style.iconDecoration),
+//     filenameStyle: _invertTextStyle(style.filenameStyle),
+//     filetypeStyle: style.filetypeStyle!.copyWith(color: Colors.black),
+//   );
+// }
 
-SuggestionStyle _darkSuggestionStyle() {
-  final style = SuggestionStyle.defaultStyle();
-  return SuggestionStyle(
-    textStyle: _invertTextStyle(style.textStyle),
-    decoration: BoxDecoration(
-      color: _greyBackground,
-      borderRadius: BorderRadius.all(Radius.circular(8)),
-    ),
-  );
-}
+// SuggestionStyle _darkSuggestionStyle() {
+//   final style = SuggestionStyle.defaultStyle();
+//   return SuggestionStyle(
+//     textStyle: _invertTextStyle(style.textStyle),
+//     decoration: BoxDecoration(
+//       color: _greyBackground,
+//       borderRadius: BorderRadius.all(Radius.circular(8)),
+//     ),
+//   );
+// }
 
 const Color _greyBackground = Color(0xFF535353);
 
-Color? _invertColor(Color? color) =>
-    color != null
-        ? Color.from(
-          alpha: color.a,
-          red: 1 - color.r,
-          green: 1 - color.g,
-          blue: 1 - color.b,
-        )
-        : null;
+Color? _invertColor(Color? color) => color != null
+    ? Color.from(
+        alpha: color.a,
+        red: 1 - color.r,
+        green: 1 - color.g,
+        blue: 1 - color.b,
+      )
+    : null;
 
 Decoration _invertDecoration(Decoration? decoration) => switch (decoration!) {
-  final BoxDecoration d => d.copyWith(color: _invertColor(d.color)),
-  final ShapeDecoration d => ShapeDecoration(
-    color: _invertColor(d.color),
-    shape: d.shape,
-    shadows: d.shadows,
-    image: d.image,
-    gradient: d.gradient,
-  ),
-  _ => decoration,
-};
+      final BoxDecoration d => d.copyWith(color: _invertColor(d.color)),
+      final ShapeDecoration d => ShapeDecoration(
+          color: _invertColor(d.color),
+          shape: d.shape,
+          shadows: d.shadows,
+          image: d.image,
+          gradient: d.gradient,
+        ),
+      _ => decoration,
+    };
 
 TextStyle _invertTextStyle(TextStyle? style) =>
     style!.copyWith(color: _invertColor(style.color));

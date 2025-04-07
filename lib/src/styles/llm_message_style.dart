@@ -5,7 +5,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 
-import 'tookit_icons.dart';
 import 'toolkit_colors.dart';
 import 'toolkit_text_styles.dart';
 
@@ -55,12 +54,10 @@ class LlmMessageStyle {
 
   /// Provides a default light style.
   factory LlmMessageStyle._lightStyle() => LlmMessageStyle(
-    icon: ToolkitIcons.spark_icon,
-    iconColor: ToolkitColors.darkIcon,
-    iconDecoration: const BoxDecoration(
-      color: ToolkitColors.llmIconBackground,
-      shape: BoxShape.circle,
-    ),
+    // No icon by default
+    icon: null,
+    iconColor: null,
+    iconDecoration: null,
     markdownStyle: MarkdownStyleSheet(
       a: ToolkitTextStyles.body1,
       blockquote: ToolkitTextStyles.body1,
@@ -83,13 +80,8 @@ class LlmMessageStyle {
     ),
     decoration: BoxDecoration(
       color: ToolkitColors.llmMessageBackground,
-      border: Border.all(color: ToolkitColors.llmMessageOutline),
-      borderRadius: const BorderRadius.only(
-        topLeft: Radius.zero,
-        topRight: Radius.circular(20),
-        bottomLeft: Radius.circular(20),
-        bottomRight: Radius.circular(20),
-      ),
+      // No border to remove the outline
+      borderRadius: BorderRadius.zero, // Full width with no rounded corners
     ),
   );
 
