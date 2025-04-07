@@ -7,6 +7,7 @@ import 'package:flutter_ai_toolkit/flutter_ai_toolkit.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 
 import '../dark_style.dart';
+import '../light_style.dart';
 import '../gemini_api_key.dart';
 import 'function_call_provider.dart' as fc;
 
@@ -108,10 +109,6 @@ class _ChatPageState extends State<ChatPage> {
 
   // Handle function calls from the LLM
   String _handleFunctionCall(fc.FunctionCall call) {
-    debugPrint('DEBUG HANDLER: Received function call: $call');
-    debugPrint('DEBUG HANDLER: Function name: ${call.name}');
-    debugPrint('DEBUG HANDLER: Parameters: ${call.parameters}');
-
     setState(() {
       _functionCalls.add(call);
     });
@@ -119,26 +116,19 @@ class _ChatPageState extends State<ChatPage> {
     // Call the appropriate function based on the name
     switch (call.name) {
       case 'add_numbers':
-        debugPrint('DEBUG HANDLER: Handling add_numbers function');
         try {
           // Try to safely convert parameters to integers
           final a = int.tryParse(call.parameters['a'].toString()) ?? 0;
           final b = int.tryParse(call.parameters['b'].toString()) ?? 0;
-          debugPrint('DEBUG HANDLER: Parameters parsed - a: $a, b: $b');
           final result = fc.addNumbers(a, b);
-          debugPrint('DEBUG HANDLER: Result: $result');
           return result;
         } catch (e) {
-          debugPrint('DEBUG HANDLER ERROR: Error in add_numbers: $e');
           return "Error adding numbers: $e";
         }
       case 'get_random_number':
-        debugPrint('DEBUG HANDLER: Handling get_random_number function');
         final result = fc.getRandomNumber();
-        debugPrint('DEBUG HANDLER: Result: $result');
         return result;
       default:
-        debugPrint('DEBUG HANDLER: Unknown function: ${call.name}');
         return "Unknown function: ${call.name}";
     }
   }
@@ -167,7 +157,7 @@ class _ChatPageState extends State<ChatPage> {
                 provider: _provider,
                 style: App.themeMode.value == ThemeMode.dark
                     ? darkChatViewStyle()
-                    : LlmChatViewStyle.defaultStyle(),
+                    : lightChatViewStyle(),
                 welcomeMessage:
                     'Welcome to the Function Calling example! Try asking me to add two numbers or generate a random number.',
                 suggestions: [
@@ -175,10 +165,8 @@ class _ChatPageState extends State<ChatPage> {
                   'Can you give me a random number?',
                   'What is 123 plus 456?',
                 ],
-                // Custom error handler to log errors instead of showing a dialog
+                // Custom error handler to show errors in a snackbar instead of a dialog
                 onErrorCallback: (context, error) {
-                  debugPrint('CUSTOM ERROR HANDLER: ${error.toString()}');
-                  // You can add a more user-friendly error message here if needed
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text('Error: ${error.toString()}'),

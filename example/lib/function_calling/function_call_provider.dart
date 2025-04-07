@@ -5,7 +5,7 @@
 import 'dart:convert';
 import 'dart:math';
 
-import 'package:flutter/material.dart' show debugPrint;
+// No debug statements needed
 import 'package:flutter_ai_toolkit/flutter_ai_toolkit.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 
@@ -31,15 +31,12 @@ class FunctionCallProvider extends GeminiProvider {
     Iterable<ChatMessage>? history,
     List<SafetySetting>? chatSafetySettings,
     GenerationConfig? chatGenerationConfig,
-  })  : _model = model,
-        super(
+  }) : super(
           model: model,
           history: history,
           chatSafetySettings: chatSafetySettings,
           chatGenerationConfig: chatGenerationConfig,
         );
-
-  final GenerativeModel _model;
   final FunctionCallHandler onFunctionCall;
 
   @override
@@ -47,20 +44,12 @@ class FunctionCallProvider extends GeminiProvider {
     String prompt, {
     Iterable<Attachment> attachments = const [],
   }) async* {
-    debugPrint('DEBUG: Starting sendMessageStream with prompt: $prompt');
+    // Starting message stream
     final userMessage = ChatMessage.user(prompt, attachments);
     final llmMessage = ChatMessage.llm();
     history = [...history, userMessage, llmMessage];
 
     // Generate the response
-    debugPrint('DEBUG: Calling super.generateStream');
-
-    // Print the model configuration for debugging
-    try {
-      debugPrint('DEBUG: Model info: ${_model.toString()}');
-    } catch (e) {
-      debugPrint('DEBUG: Error accessing model info: $e');
-    }
 
     final responseStream = super.generateStream(
       prompt,
@@ -70,26 +59,20 @@ class FunctionCallProvider extends GeminiProvider {
     String fullResponse = '';
 
     // Collect the full response
-    debugPrint('DEBUG: Starting to collect response chunks');
     try {
       await for (final chunk in responseStream) {
-        debugPrint('DEBUG: Received chunk: $chunk');
         fullResponse += chunk;
         llmMessage.append(chunk);
         yield chunk;
       }
-      debugPrint('DEBUG: Full response collected: $fullResponse');
 
       // If we got an empty response, add a message to help debugging
       if (fullResponse.isEmpty) {
-        debugPrint('DEBUG: Warning - received empty response from model');
         llmMessage.append(
             'The model returned an empty response. Please try again with a different prompt.');
         yield 'The model returned an empty response. Please try again with a different prompt.';
       }
     } catch (e) {
-      debugPrint('DEBUG ERROR: Error collecting response: $e');
-      debugPrint('DEBUG ERROR: Stack trace: ${StackTrace.current}');
       // Add error message to the chat
       llmMessage.append('Error: $e');
       yield 'Error: $e';
@@ -99,50 +82,34 @@ class FunctionCallProvider extends GeminiProvider {
     // Check if the response contains a function call
     try {
       // Parse the response to look for tool calls
-      debugPrint('DEBUG: Checking for function calls in response');
       if (fullResponse.contains('"functionCall"') ||
           fullResponse.contains('"function_call"') ||
           fullResponse.contains('"tool_calls"') ||
           fullResponse.contains('"toolCalls"')) {
-        debugPrint('DEBUG: Function call keywords found in response');
-
         // Try to extract the function call information
         Map<String, dynamic>? jsonResponse;
         try {
-          debugPrint('DEBUG: Attempting to parse full response as JSON');
           jsonResponse = jsonDecode(fullResponse);
-          debugPrint('DEBUG: Successfully parsed JSON: $jsonResponse');
         } catch (e) {
-          debugPrint('DEBUG: Failed to parse full response as JSON: $e');
           // If the full response isn't valid JSON, try to extract just the function call part
-          debugPrint('DEBUG: Attempting to extract function call using regex');
           final functionCallRegex =
               r'\{\s*"(function_call|functionCall|tool_calls|toolCalls)"\s*:\s*\{.*?\}\s*\}';
-          debugPrint('DEBUG: Using regex: $functionCallRegex');
           final functionCallMatch =
               RegExp(functionCallRegex, dotAll: true).firstMatch(fullResponse);
 
           if (functionCallMatch != null) {
             final functionCallJson = functionCallMatch.group(0);
-            debugPrint(
-                'DEBUG: Extracted function call JSON: $functionCallJson');
             if (functionCallJson != null) {
               try {
                 jsonResponse = jsonDecode(functionCallJson);
-                debugPrint(
-                    'DEBUG: Successfully parsed extracted JSON: $jsonResponse');
               } catch (e) {
-                debugPrint('DEBUG: Failed to parse extracted JSON: $e');
+                // Failed to parse extracted JSON
               }
             }
-          } else {
-            debugPrint('DEBUG: No function call match found with regex');
           }
         }
 
         if (jsonResponse != null) {
-          debugPrint('DEBUG: Processing JSON response: $jsonResponse');
-
           // Check for different possible formats of function calls
           final functionCallData =
               jsonResponse['function_call'] ?? jsonResponse['functionCall'];
@@ -152,7 +119,6 @@ class FunctionCallProvider extends GeminiProvider {
               jsonResponse['tool_calls'] ?? jsonResponse['toolCalls'];
 
           if (functionCallData != null) {
-            debugPrint('DEBUG: Found function call data: $functionCallData');
             final functionCall = FunctionCall(
               name: functionCallData['name'],
               parameters: functionCallData['parameters'] ??
@@ -160,14 +126,11 @@ class FunctionCallProvider extends GeminiProvider {
                   {},
             );
 
-            debugPrint('DEBUG: Created FunctionCall object: $functionCall');
             // Call the function handler
             String functionResponse;
             try {
               functionResponse = onFunctionCall(functionCall);
-              debugPrint('DEBUG: Function handler returned: $functionResponse');
             } catch (e) {
-              debugPrint('DEBUG ERROR: Error in function handler: $e');
               functionResponse = "Error executing function: $e";
             }
 
@@ -176,7 +139,6 @@ class FunctionCallProvider extends GeminiProvider {
             yield '\n\n$functionResponse';
           } else if (toolCalls != null) {
             // Handle tool calls format (array or single object)
-            debugPrint('DEBUG: Found tool calls: $toolCalls');
             List<dynamic> toolCallsList;
 
             if (toolCalls is List) {
@@ -186,24 +148,17 @@ class FunctionCallProvider extends GeminiProvider {
             }
 
             for (final toolCall in toolCallsList) {
-              debugPrint('DEBUG: Processing tool call: $toolCall');
               final function = toolCall['function'] ?? {};
               final functionCall = FunctionCall(
                 name: function['name'] ?? '',
                 parameters: function['parameters'] ?? function['args'] ?? {},
               );
 
-              debugPrint(
-                  'DEBUG: Created FunctionCall object from tool call: $functionCall');
               // Call the function handler
               String functionResponse;
               try {
                 functionResponse = onFunctionCall(functionCall);
-                debugPrint(
-                    'DEBUG: Function handler returned: $functionResponse');
               } catch (e) {
-                debugPrint(
-                    'DEBUG ERROR: Error in function handler for tool call: $e');
                 functionResponse = "Error executing function: $e";
               }
 
@@ -211,23 +166,14 @@ class FunctionCallProvider extends GeminiProvider {
               llmMessage.append('\n\n$functionResponse');
               yield '\n\n$functionResponse';
             }
-          } else {
-            debugPrint('DEBUG: No function call or tool calls found in JSON');
           }
-        } else {
-          debugPrint('DEBUG: No valid JSON response found');
         }
-      } else {
-        debugPrint('DEBUG: No function call keywords found in response');
       }
     } catch (e) {
       // Error handling function call parsing
-      debugPrint('DEBUG ERROR: Error parsing function call: $e');
-      debugPrint('DEBUG ERROR: Stack trace: ${StackTrace.current}');
     }
 
     // Notify listeners that the history has changed
-    debugPrint('DEBUG: Notifying listeners of history change');
     notifyListeners();
   }
 }

@@ -9,6 +9,7 @@ import 'package:flutter_ai_toolkit/flutter_ai_toolkit.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 
 import '../dark_style.dart';
+import '../light_style.dart';
 import '../gemini_api_key.dart';
 
 void main() => runApp(const App());
@@ -61,11 +62,11 @@ class _ChatPageState extends State<ChatPage> {
   // Handle function calls from the LLM
   String _handleFunctionCall(FunctionCall call) {
     debugPrint('Function called: ${call.name} with params: ${call.parameters}');
-    
+
     setState(() {
       _functionCalls.add(call);
     });
-    
+
     // Call the appropriate function based on the name
     switch (call.name) {
       case 'add_numbers':
@@ -80,7 +81,8 @@ class _ChatPageState extends State<ChatPage> {
         }
       case 'get_random_number':
         final random = Random();
-        final randomNumber = random.nextInt(100) + 1; // Random number between 1 and 100
+        final randomNumber =
+            random.nextInt(100) + 1; // Random number between 1 and 100
         return "Your random number is: $randomNumber";
       default:
         return "Unknown function: ${call.name}";
@@ -111,7 +113,7 @@ class _ChatPageState extends State<ChatPage> {
                 provider: _provider,
                 style: App.themeMode.value == ThemeMode.dark
                     ? darkChatViewStyle()
-                    : LlmChatViewStyle.defaultStyle(),
+                    : lightChatViewStyle(),
                 welcomeMessage:
                     'Welcome to the Simple Function Calling example! Try asking me to add two numbers or generate a random number.',
                 suggestions: [
@@ -119,9 +121,8 @@ class _ChatPageState extends State<ChatPage> {
                   'Can you give me a random number?',
                   'What is 123 plus 456?',
                 ],
-                // Custom error handler to log errors instead of showing a dialog
+                // Custom error handler to show errors in a snackbar instead of a dialog
                 onErrorCallback: (context, error) {
-                  debugPrint('CUSTOM ERROR HANDLER: ${error.toString()}');
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text('Error: ${error.toString()}'),
@@ -223,29 +224,29 @@ class SimpleFunctionCallProvider extends ChangeNotifier implements LlmProvider {
   set history(Iterable<ChatMessage> value) {
     // Not implemented
   }
-  
+
   // Helper method to check if a prompt is asking for addition
   bool _isAdditionRequest(String prompt) {
     final lowerPrompt = prompt.toLowerCase();
-    return (lowerPrompt.contains('add') || 
-            lowerPrompt.contains('plus') || 
-            lowerPrompt.contains('sum') || 
+    return (lowerPrompt.contains('add') ||
+            lowerPrompt.contains('plus') ||
+            lowerPrompt.contains('sum') ||
             prompt.contains('+')) &&
-           _extractNumbersFromPrompt(prompt).length >= 2;
+        _extractNumbersFromPrompt(prompt).length >= 2;
   }
-  
+
   // Helper method to check if a prompt is asking for a random number
   bool _isRandomNumberRequest(String prompt) {
     final lowerPrompt = prompt.toLowerCase();
     return lowerPrompt.contains('random') && lowerPrompt.contains('number');
   }
-  
+
   // Helper method to extract numbers from a prompt
   List<int> _extractNumbersFromPrompt(String prompt) {
     final numbers = <int>[];
     final RegExp regExp = RegExp(r'\b(\d+)\b');
     final matches = regExp.allMatches(prompt);
-    
+
     for (final match in matches) {
       if (match.group(1) != null) {
         final number = int.tryParse(match.group(1)!);
@@ -254,7 +255,7 @@ class SimpleFunctionCallProvider extends ChangeNotifier implements LlmProvider {
         }
       }
     }
-    
+
     return numbers;
   }
 
@@ -263,87 +264,78 @@ class SimpleFunctionCallProvider extends ChangeNotifier implements LlmProvider {
     String prompt, {
     Iterable<Attachment> attachments = const [],
   }) async* {
-    debugPrint('Sending message: $prompt');
-    
     // Add user message to history
     final userMessage = ChatMessage.user(prompt, attachments);
     final llmMessage = ChatMessage.llm();
     _history.addAll([userMessage, llmMessage]);
-    
+
     // Check if this is a function call request
     if (_isAdditionRequest(prompt)) {
       // Extract numbers using regex
       final numbers = _extractNumbersFromPrompt(prompt);
-      
+
       if (numbers.length >= 2) {
         final a = numbers[0];
         final b = numbers[1];
-        
-        debugPrint('Extracted numbers: a=$a, b=$b');
-        
+
         // Create a function call
         final functionCall = FunctionCall(
           name: 'add_numbers',
           parameters: {'a': a, 'b': b},
         );
-        
+
         // Get the response from the function handler
         final response = onFunctionCall(functionCall);
-        debugPrint('Function response: $response');
-        
+
         // Add the response to the message
         llmMessage.append(response);
         yield response;
         return;
-      } else {
-        debugPrint('Could not extract two numbers from: $prompt');
       }
     } else if (_isRandomNumberRequest(prompt)) {
-      debugPrint('Detected random number request');
-      
       // Create a function call for random number
       final functionCall = FunctionCall(
         name: 'get_random_number',
         parameters: {},
       );
-      
+
       // Get the response from the function handler
       final response = onFunctionCall(functionCall);
-      debugPrint('Function response: $response');
-      
+
       // Add the response to the message
       llmMessage.append(response);
       yield response;
       return;
     }
-    
+
     // If not a function call, use the Gemini API for a regular response
     try {
       final model = GenerativeModel(
         model: 'gemini-1.5-pro',
         apiKey: apiKey,
       );
-      
+
       final response = await model.generateContent([
         Content.text(prompt),
       ]);
-      
-      final responseText = response.text ?? "I'm not sure how to respond to that.";
+
+      final responseText =
+          response.text ?? "I'm not sure how to respond to that.";
       llmMessage.append(responseText);
       yield responseText;
     } catch (e) {
-      debugPrint('Error generating content: $e');
       final errorMessage = "I encountered an error: $e";
       llmMessage.append(errorMessage);
       yield errorMessage;
     }
-    
+
     // Notify listeners that the history has changed
     notifyListeners();
   }
-  
+
   @override
-  Stream<String> generateStream(String prompt, {Iterable<Attachment> attachments = const []}) {
+  Stream<String> generateStream(String prompt,
+      {Iterable<Attachment> attachments = const []}) {
     // This is just a wrapper around sendMessageStream
     return sendMessageStream(prompt, attachments: attachments);
   }
