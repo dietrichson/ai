@@ -27,8 +27,10 @@ flutter run -d chrome example/lib/function_calling/simple_function_calling_fixed
 
 - **Theme Support**: Both light and dark themes
 - **Function Calling**: Add numbers and generate random numbers
+- **Voice Notes**: Record audio messages with proper permission handling
 - **Error Handling**: Custom error handlers with snackbar notifications
 - **Function Call Display**: Panel showing all function calls made during the session
+- **Production-Ready**: Includes all necessary setup for a production app
 
 ## Screenshots
 

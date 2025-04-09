@@ -14,7 +14,11 @@ This repository includes two different approaches to function calling:
 
 ## Features
 
-### 1. Theme Support
+### 1. Voice Notes Enabled
+
+Voice notes are enabled in these examples for a complete production-ready experience. The examples include proper permission handling for microphone access on physical devices.
+
+### 2. Theme Support
 
 Both examples now support light and dark themes that automatically switch when the app theme changes:
 
@@ -92,20 +96,20 @@ Uses pattern matching to detect function call requests:
 if (_isAdditionRequest(prompt)) {
   // Extract numbers using regex
   final numbers = _extractNumbersFromPrompt(prompt);
-  
+
   if (numbers.length >= 2) {
     final a = numbers[0];
     final b = numbers[1];
-    
+
     // Create a function call
     final functionCall = FunctionCall(
       name: 'add_numbers',
       parameters: {'a': a, 'b': b},
     );
-    
+
     // Get the response from the function handler
     final response = onFunctionCall(functionCall);
-    
+
     // Add the response to the message
     llmMessage.append(response);
     yield response;
@@ -134,6 +138,62 @@ The system will:
 1. Detect that this is a random number request
 2. Call the `get_random_number` function
 3. Return: "Your random number is: 42" (or any random number between 1 and 100)
+
+## Permission Handling
+
+The examples include proper permission handling for microphone access on physical devices:
+
+```dart
+// Request microphone permission before starting recording
+final hasPermission = await PermissionHandler.requestMicrophonePermission(context);
+if (!hasPermission) {
+  // Show a snackbar if permission is denied
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(
+      content: Text('Microphone permission is required for voice notes'),
+      duration: Duration(seconds: 3),
+    ),
+  );
+  return;
+}
+```
+
+The `PermissionHandler` class provides a convenient way to request and check permissions:
+
+```dart
+static Future<bool> requestMicrophonePermission(BuildContext context) async {
+  // Check current permission status
+  PermissionStatus status = await Permission.microphone.status;
+
+  // If permission is already granted, return true
+  if (status.isGranted) {
+    return true;
+  }
+
+  // If permission is denied but can be requested, request it
+  if (status.isDenied) {
+    status = await Permission.microphone.request();
+    return status.isGranted;
+  }
+
+  // If permission is permanently denied, show a dialog to open app settings
+  if (status.isPermanentlyDenied) {
+    final result = await _showPermissionDialog(
+      context,
+      'Microphone Permission Required',
+      'Voice notes require microphone access. Please enable it in app settings.',
+    );
+
+    if (result == true) {
+      await openAppSettings();
+    }
+
+    return false;
+  }
+
+  return false;
+}
+```
 
 ## Theming
 

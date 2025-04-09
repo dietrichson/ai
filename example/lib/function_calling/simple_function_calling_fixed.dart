@@ -11,6 +11,7 @@ import 'package:google_generative_ai/google_generative_ai.dart';
 import '../dark_style.dart';
 import '../light_style.dart';
 import '../gemini_api_key.dart';
+import 'permission_aware_chat_view.dart';
 
 void main() => runApp(const App());
 
@@ -109,7 +110,7 @@ class _ChatPageState extends State<ChatPage> {
         body: Column(
           children: [
             Expanded(
-              child: LlmChatView(
+              child: PermissionAwareChatView(
                 provider: _provider,
                 style: App.themeMode.value == ThemeMode.dark
                     ? darkChatViewStyle()
