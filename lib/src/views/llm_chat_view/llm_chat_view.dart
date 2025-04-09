@@ -19,7 +19,6 @@ import '../../providers/interface/llm_provider.dart';
 import '../../styles/llm_chat_view_style.dart';
 import '../chat_history_view.dart';
 import '../chat_input/chat_input.dart';
-import '../chat_input/chat_suggestion_view.dart';
 import '../response_builder.dart';
 import 'llm_response.dart';
 
@@ -82,7 +81,7 @@ class LlmChatView extends StatefulWidget {
     LlmChatViewStyle? style,
     ResponseBuilder? responseBuilder,
     LlmStreamGenerator? messageSender,
-    this.suggestions = const [],
+    List<String> suggestions = const [],
     String? welcomeMessage,
     this.onCancelCallback,
     this.onErrorCallback,
@@ -96,17 +95,11 @@ class LlmChatView extends StatefulWidget {
          responseBuilder: responseBuilder,
          messageSender: messageSender,
          style: style,
+         suggestions: suggestions,
          welcomeMessage: welcomeMessage,
          enableAttachments: enableAttachments,
          enableVoiceNotes: enableVoiceNotes,
        );
-
-  /// The list of suggestions to display in the chat interface.
-  ///
-  /// This list contains predefined suggestions that can be shown to the user
-  /// when the chat history is empty. The user can select any of these
-  /// suggestions to quickly start a conversation with the LLM.
-  final List<String> suggestions;
 
   /// Whether to enable file and image attachments in the chat input.
   ///
@@ -204,21 +197,14 @@ class _LlmChatViewState extends State<LlmChatView>
                                         _associatedResponse == null
                                     ? _onEditMessage
                                     : null,
+                            onSelectSuggestion: _onSelectSuggestion,
                           ),
-                          if (widget.suggestions.isNotEmpty &&
-                              widget.viewModel.provider.history.isEmpty)
-                            Align(
-                              alignment: Alignment.topCenter,
-                              child: ChatSuggestionsView(
-                                suggestions: widget.suggestions,
-                                onSelectSuggestion: _onSelectSuggestion,
-                              ),
-                            ),
                         ],
                       ),
                     ),
                     ChatInput(
                       initialMessage: _initialMessage,
+                      autofocus: widget.viewModel.suggestions.isEmpty,
                       onCancelEdit:
                           _associatedResponse != null ? _onCancelEdit : null,
                       onSendMessage: _onSendMessage,
